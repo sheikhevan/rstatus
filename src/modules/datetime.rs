@@ -3,12 +3,12 @@ use chrono::Local;
 use tokio::sync::mpsc::Sender;
 use tokio::time::{Duration, sleep};
 
-pub async fn date(tx: Sender<StatusUpdate>, secs: u64) {
+pub async fn date(tx: Sender<StatusUpdate>, secs: u64, color: &str) {
     loop {
-        let output = Local::now().format("%A, %b %d");
+        let output = format!("[{}]", Local::now().format("%A, %b %d"));
         tx.send(StatusUpdate {
             module: "date".to_string(),
-            text: output.to_string(),
+            text: format!("<span foreground=\"{}\">{}</span>", color, output),
         })
         .await
         .unwrap();
@@ -16,12 +16,12 @@ pub async fn date(tx: Sender<StatusUpdate>, secs: u64) {
     }
 }
 
-pub async fn time(tx: Sender<StatusUpdate>, secs: u64) {
+pub async fn time(tx: Sender<StatusUpdate>, secs: u64, color: &str) {
     loop {
-        let output = Local::now().format("%H:%M:%S");
+        let output = format!("[{}]", Local::now().format("%H:%M:%S"));
         tx.send(StatusUpdate {
             module: "time".to_string(),
-            text: output.to_string(),
+            text: format!("<span foreground=\"{}\">{}</span>", color, output),
         })
         .await
         .unwrap();
