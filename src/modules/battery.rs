@@ -4,6 +4,11 @@ use std::io::{Seek, prelude::*};
 use tokio::sync::mpsc::Sender;
 use tokio::time::{Duration, sleep};
 
+// INFO: This module takes two additional parameters: `battery_name` and `status_colors`.
+// `battery_name` is simply the name of the battery as it is in `/sys/class/power_supply/` (for
+// most people this will be `BAT0`). `status_colors` is a boolean that means if the battery is
+// discharging the color will be red and if it is charging it will be green.
+
 pub async fn battery(
     tx: Sender<StatusUpdate>,
     battery_name: &str,

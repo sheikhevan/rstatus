@@ -8,6 +8,13 @@ pub struct StatusUpdate {
     pub text: String,
 }
 
+// INFO: To see available modules go to `src/modules`. To add or remove modules from your bar,
+// simply add or remove their `tokio::spawn()` line. All functions require at least three
+// parameters, tx (required; use `tx.clone()`), secs (the amount of time in between module
+// reloads), and color (pango markup colors; if you just want the default color, use `"white"`).
+
+// To see the specific parameters required for a module, go to it's file in `src/modules/`.
+
 #[tokio::main]
 async fn main() {
     let (tx, mut rx) = mpsc::channel(100);
