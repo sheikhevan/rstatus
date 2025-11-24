@@ -20,7 +20,7 @@ pub async fn pipewire(tx: Sender<StatusUpdate>, secs: u64, color: &str, status_c
         let muted_stdout = String::from_utf8(muted.stdout).unwrap().trim().to_string();
 
         let output = format!(
-            "[{}%{}]",
+            "[Vol: {}%{}]",
             volume_stdout,
             if muted_stdout.is_empty() {
                 ""
