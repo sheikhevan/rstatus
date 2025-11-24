@@ -36,7 +36,7 @@ pub async fn network(
         let ip = Command::new("sh")
             .arg("-c")
             .arg(format!(
-                "ip -4 addr show {} | grep -oP '(?<=inet\\s)\\d+(\\.\\d+){{3}}'",
+                "ip -4 addr show {} | grep -oP '(?<=inet\\s)\\d+(\\.\\d+){{3}}' | head -n1",
                 interface_name
             ))
             .output()
@@ -46,7 +46,7 @@ pub async fn network(
         let ssid = Command::new("sh")
             .arg("-c")
             .arg(format!(
-                "iw dev {} link | grep SSID | awk '{{print $2}}'",
+                "iw dev {} link | grep 'SSID:' | sed 's/.*SSID: //'",
                 interface_name
             ))
             .output()
