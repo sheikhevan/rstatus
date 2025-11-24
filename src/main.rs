@@ -39,7 +39,7 @@ async fn main() {
         tx.clone(),
         "macsmc-battery",
         1,
-        "white", // NOTE: This is irrelevant since status_colors is set to true
+        "white",
         true,
     ));
     tokio::spawn(crate::modules::datetime::date(tx.clone(), 1, "white"));
