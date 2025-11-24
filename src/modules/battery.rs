@@ -13,7 +13,7 @@ pub async fn battery(
     tx: Sender<StatusUpdate>,
     battery_name: &str,
     secs: u64,
-    mut color: &str,
+    color: &str,
     status_colors: bool,
 ) {
     let mut file_capacity =
@@ -61,15 +61,17 @@ pub async fn battery(
             status_contents.trim()
         );
 
-        if status_colors && status_contents.trim() == "Discharging" {
-            color = "red";
+        let final_color = if status_colors && status_contents.trim() == "Discharging" {
+            "red"
         } else if status_colors {
-            color = "green";
-        }
+            "green"
+        } else {
+            color
+        };
 
         tx.send(StatusUpdate {
             module: "battery".to_string(),
-            text: format!("<span foreground=\"{}\">{}</span>", color, output),
+            text: format!("<span foreground=\"{}\">{}</span>", final_color, output),
         })
         .await
         .unwrap();

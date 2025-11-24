@@ -21,6 +21,19 @@ async fn main() {
 
     let mut status: std::collections::HashMap<String, String> = std::collections::HashMap::new();
 
+    tokio::spawn(crate::modules::network::network(
+        tx.clone(),
+        "wlp1s0f0",
+        1,
+        "white",
+        true,
+    ));
+    tokio::spawn(crate::modules::pipewire::pipewire(
+        tx.clone(),
+        1,
+        "white",
+        true,
+    ));
     tokio::spawn(crate::modules::disk::diskspace(tx.clone(), 1, "white"));
     tokio::spawn(crate::modules::battery::battery(
         tx.clone(),
@@ -37,11 +50,17 @@ async fn main() {
 
         let mut actual_outputs: Vec<String> = Vec::new();
 
-        if let Some(battery) = status.get("battery") {
-            actual_outputs.push(battery.to_string());
+        if let Some(network) = status.get("network") {
+            actual_outputs.push(network.to_string());
+        }
+        if let Some(pipewire) = status.get("pipewire") {
+            actual_outputs.push(pipewire.to_string());
         }
         if let Some(disk) = status.get("diskspace") {
             actual_outputs.push(disk.to_string());
+        }
+        if let Some(battery) = status.get("battery") {
+            actual_outputs.push(battery.to_string());
         }
         if let Some(date) = status.get("date") {
             actual_outputs.push(date.to_string());
