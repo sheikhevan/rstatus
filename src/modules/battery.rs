@@ -1,6 +1,6 @@
 use crate::StatusUpdate;
 use std::fs::File;
-use std::io::prelude::*;
+use std::io::{Seek, prelude::*};
 use tokio::sync::mpsc::Sender;
 use tokio::time::{Duration, sleep};
 
@@ -32,6 +32,8 @@ pub async fn battery(
     let mut status_contents = String::new();
 
     loop {
+        file_capacity.seek(std::io::SeekFrom::Start(0)).unwrap();
+        file_status.seek(std::io::SeekFrom::Start(0)).unwrap();
         file_capacity
             .read_to_string(&mut capacity_contents)
             .unwrap_or_else(|_| {
@@ -48,9 +50,13 @@ pub async fn battery(
                     battery_name
                 )
             });
-        let output = format!("[{}% ({})]", capacity_contents, status_contents);
+        let output = format!(
+            "[{}% ({})]",
+            capacity_contents.trim(),
+            status_contents.trim()
+        );
 
-        if status_colors && status_contents == "Discharging" {
+        if status_colors && status_contents.trim() == "Discharging" {
             color = "red";
         } else if status_colors {
             color = "green";
@@ -62,6 +68,9 @@ pub async fn battery(
         })
         .await
         .unwrap();
+
+        capacity_contents.clear();
+        status_contents.clear();
 
         sleep(Duration::from_secs(secs)).await;
     }
