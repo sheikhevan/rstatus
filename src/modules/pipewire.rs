@@ -36,7 +36,7 @@ pub async fn pipewire(tx: Sender<StatusUpdate>, secs: u64, color: &str, status_c
         };
 
         tx.send(StatusUpdate {
-            module: "pipewire".to_string(),
+            module: "pipewire",
             text: format!("<span foreground=\"{}\">{}</span>", final_color, output),
         })
         .await

@@ -7,7 +7,7 @@ pub async fn date(tx: Sender<StatusUpdate>, secs: u64, color: &str) {
     loop {
         let output = format!("[{}]", Local::now().format("%A, %b %d"));
         tx.send(StatusUpdate {
-            module: "date".to_string(),
+            module: "date",
             text: format!("<span foreground=\"{}\">{}</span>", color, output),
         })
         .await
@@ -20,7 +20,7 @@ pub async fn time(tx: Sender<StatusUpdate>, secs: u64, color: &str) {
     loop {
         let output = format!("[{}]", Local::now().format("%H:%M:%S"));
         tx.send(StatusUpdate {
-            module: "time".to_string(),
+            module: "time",
             text: format!("<span foreground=\"{}\">{}</span>", color, output),
         })
         .await

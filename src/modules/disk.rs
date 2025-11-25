@@ -32,7 +32,7 @@ pub async fn diskspace(tx: Sender<StatusUpdate>, secs: u64, color: &str) {
         let output = format!("['/': {:.1}GB ({:.0}%) Avail]", avail_gb, avail_perc);
 
         tx.send(StatusUpdate {
-            module: "diskspace".to_string(),
+            module: "diskspace",
             text: format!("<span foreground=\"{}\">{}</span>", color, output),
         })
         .await

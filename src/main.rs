@@ -4,7 +4,7 @@ use tokio::sync::mpsc;
 mod modules;
 
 pub struct StatusUpdate {
-    pub module: String,
+    pub module: &'static str,
     pub text: String,
 }
 
@@ -17,7 +17,7 @@ pub struct StatusUpdate {
 
 #[tokio::main]
 async fn main() {
-    let (tx, mut rx) = mpsc::channel(100);
+    let (tx, mut rx) = mpsc::channel(8); // NOTE: Change this as you add more modules!
 
     let mut status: std::collections::HashMap<String, String> = std::collections::HashMap::new();
 

@@ -22,7 +22,7 @@ pub async fn network(
 ) {
     let mut file_operstate = File::open(format!("/sys/class/net/{}/operstate", interface_name))
         .unwrap_or_else(|_| panic!("Unable to open /sys/class/net/{}/operstate", interface_name));
-    let mut operstate_contents = String::new();
+    let mut operstate_contents = String::with_capacity(4);
 
     loop {
         file_operstate.seek(std::io::SeekFrom::Start(0)).unwrap();
@@ -74,7 +74,7 @@ pub async fn network(
             };
 
         tx.send(StatusUpdate {
-            module: "network".to_string(),
+            module: "network",
             text: format!("<span foreground=\"{}\">{}</span>", final_color, output),
         })
         .await

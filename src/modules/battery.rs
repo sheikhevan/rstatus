@@ -33,8 +33,8 @@ pub async fn battery(
             )
         });
 
-    let mut capacity_contents = String::new();
-    let mut status_contents = String::new();
+    let mut capacity_contents = String::with_capacity(8);
+    let mut status_contents = String::with_capacity(16);
 
     loop {
         file_capacity.seek(std::io::SeekFrom::Start(0)).unwrap();
@@ -70,7 +70,7 @@ pub async fn battery(
         };
 
         tx.send(StatusUpdate {
-            module: "battery".to_string(),
+            module: "battery",
             text: format!("<span foreground=\"{}\">{}</span>", final_color, output),
         })
         .await
