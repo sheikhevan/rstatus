@@ -1,6 +1,6 @@
 use crate::StatusUpdate;
 use std::fs::File;
-use std::io::{Seek, prelude::*};
+use std::io::{BufRead, BufReader, Seek, SeekFrom};
 use tokio::sync::mpsc::Sender;
 use tokio::time::{Duration, sleep};
 
@@ -16,16 +16,14 @@ pub async fn battery(
     color: &str,
     status_colors: bool,
 ) {
-    let mut file_capacity =
-        File::open(format!("/sys/class/power_supply/{}/capacity", battery_name)).unwrap_or_else(
-            |_| {
-                panic!(
-                    "Unable to open /sys/class/power_supply/{}/capacity",
-                    battery_name
-                )
-            },
-        );
-    let mut file_status = File::open(format!("/sys/class/power_supply/{}/status", battery_name))
+    let file_capacity = File::open(format!("/sys/class/power_supply/{}/capacity", battery_name))
+        .unwrap_or_else(|_| {
+            panic!(
+                "Unable to open /sys/class/power_supply/{}/capacity",
+                battery_name
+            )
+        });
+    let file_status = File::open(format!("/sys/class/power_supply/{}/status", battery_name))
         .unwrap_or_else(|_| {
             panic!(
                 "Unable to open /sys/class/power_supply/{}/status",
@@ -33,35 +31,50 @@ pub async fn battery(
             )
         });
 
-    let mut capacity_contents = String::with_capacity(8);
-    let mut status_contents = String::with_capacity(16);
+    let mut reader_capacity = BufReader::new(file_capacity);
+    let mut reader_status = BufReader::new(file_status);
+
+    let mut capacity_line = String::with_capacity(8);
+    let mut status_line = String::with_capacity(16);
+
+    let mut output = String::with_capacity(32);
 
     loop {
-        file_capacity.seek(std::io::SeekFrom::Start(0)).unwrap();
-        file_status.seek(std::io::SeekFrom::Start(0)).unwrap();
-        file_capacity
-            .read_to_string(&mut capacity_contents)
+        capacity_line.clear();
+        status_line.clear();
+
+        reader_capacity.seek(SeekFrom::Start(0)).unwrap();
+        reader_status.seek(SeekFrom::Start(0)).unwrap();
+
+        reader_capacity
+            .read_line(&mut capacity_line)
             .unwrap_or_else(|_| {
                 panic!(
                     "Unable to read /sys/class/power_supply/{}/capacity",
                     battery_name
                 )
             });
-        file_status
-            .read_to_string(&mut status_contents)
+        reader_status
+            .read_line(&mut status_line)
             .unwrap_or_else(|_| {
                 panic!(
                     "Unable to read /sys/class/power_supply/{}/status",
                     battery_name
                 )
             });
-        let output = format!(
-            "[{}% ({})]",
-            capacity_contents.trim(),
-            status_contents.trim()
-        );
 
-        let final_color = if status_colors && status_contents.trim() == "Discharging" {
+        let capacity_trimmed = capacity_line.trim();
+        let status_trimmed = status_line.trim();
+
+        // We now reuse the output buffer
+        output.clear();
+        output.push('[');
+        output.push_str(capacity_trimmed);
+        output.push_str("% (");
+        output.push_str(status_trimmed);
+        output.push_str(")]");
+
+        let final_color = if status_colors && status_trimmed == "Discharging" {
             "red"
         } else if status_colors {
             "green"
@@ -75,9 +88,6 @@ pub async fn battery(
         })
         .await
         .unwrap();
-
-        capacity_contents.clear();
-        status_contents.clear();
 
         sleep(Duration::from_secs(secs)).await;
     }
