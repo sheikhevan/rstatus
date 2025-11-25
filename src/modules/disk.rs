@@ -1,42 +1,42 @@
 use crate::StatusUpdate;
-use std::process::Command;
+use nix::sys::statvfs::statvfs;
 use tokio::sync::mpsc::Sender;
 use tokio::time::{Duration, sleep};
 
 pub async fn diskspace(tx: Sender<StatusUpdate>, secs: u64, color: &str) {
     loop {
-        let total = Command::new("sh")
-            .arg("-c")
-            .arg("df -B1 / | awk 'NR==2 {print $2}'")
-            .output()
-            .expect("Failed to get total space");
-        let total_bytes = String::from_utf8(total.stdout).unwrap().trim().to_string();
-        let total_f64: f64 = total_bytes.parse().unwrap();
+        match statvfs("/") {
+            Ok(stats) => {
+                let block_size = stats.block_size() as f64;
+                let total_blocks = stats.blocks() as f64;
+                let avail_blocks = stats.blocks_available() as f64;
 
-        let avail = Command::new("sh")
-            .arg("-c")
-            .arg("df -B1 / | awk 'NR==2 {print $4}'")
-            .output()
-            .expect("Failed to get available space");
-        let avail_bytes = String::from_utf8(avail.stdout).unwrap().trim().to_string();
-        let avail_f64: f64 = avail_bytes.parse().unwrap();
+                let total_bytes = total_blocks * block_size;
+                let avail_bytes = avail_blocks * block_size;
+                let _used_bytes = total_bytes - avail_bytes;
 
-        let avail_perc = (avail_f64 / total_f64) * 100.0;
-        let used = total_f64 - avail_f64;
-        let _used_perc = (used / total_f64) * 100.0;
+                let avail_gb = avail_bytes / 1_073_741_824.0;
+                let avail_perc = (avail_bytes / total_bytes) * 100.0;
 
-        let _total_gb = total_f64 / 1_073_741_824.0;
-        let _used_gb = used / 1_073_741_824.0;
-        let avail_gb = avail_f64 / 1_073_741_824.0;
+                let output = format!("['/': {:.1}GB ({:.0}%) Avail]", avail_gb, avail_perc);
 
-        let output = format!("['/': {:.1}GB ({:.0}%) Avail]", avail_gb, avail_perc);
-
-        tx.send(StatusUpdate {
-            module: "diskspace",
-            text: format!("<span foreground=\"{}\">{}</span>", color, output),
-        })
-        .await
-        .unwrap();
+                tx.send(StatusUpdate {
+                    module: "diskspace",
+                    text: format!("<span foreground=\"{}\">{}</span>", color, output),
+                })
+                .await
+                .unwrap();
+            }
+            Err(e) => {
+                eprintln!("Failed to get disk stats: {}", e);
+                tx.send(StatusUpdate {
+                    module: "diskspace",
+                    text: format!("<span foreground=\"{}\">[Disk: Error]</span>", color),
+                })
+                .await
+                .unwrap();
+            }
+        }
 
         sleep(Duration::from_secs(secs)).await;
     }
