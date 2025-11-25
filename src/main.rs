@@ -1,4 +1,4 @@
-use std::io::Write;
+use std::io::{self, Write};
 use tokio::sync::mpsc;
 
 mod modules;
@@ -7,6 +7,9 @@ pub struct StatusUpdate {
     pub module: &'static str,
     pub text: String,
 }
+
+const ESTIMATED_MODULE_OUTPUT_SIZE: usize = 50;
+const NUM_MODULES: usize = 6; // NOTE: Change this as you add more modules!
 
 // INFO: To see available modules go to `src/modules`. To add or remove modules from your bar,
 // simply add or remove their `tokio::spawn()` line. All functions require at least three
@@ -19,7 +22,9 @@ pub struct StatusUpdate {
 async fn main() {
     let (tx, mut rx) = mpsc::channel(8); // NOTE: Change this as you add more modules!
 
-    let mut status: std::collections::HashMap<String, String> = std::collections::HashMap::new();
+    let mut status: [Option<String>; NUM_MODULES] = Default::default();
+
+    let mut output = String::with_capacity(NUM_MODULES * ESTIMATED_MODULE_OUTPUT_SIZE);
 
     tokio::spawn(crate::modules::network::network(
         tx.clone(),
@@ -45,32 +50,39 @@ async fn main() {
     tokio::spawn(crate::modules::datetime::date(tx.clone(), 1, "white"));
     tokio::spawn(crate::modules::datetime::time(tx.clone(), 1, "white"));
 
+    let stdout = io::stdout();
+    let mut handle = stdout.lock();
+
     while let Some(update) = rx.recv().await {
-        status.insert(update.module.to_string(), update.text.to_string());
+        // Map the module name to it's index
+        let idx = match update.module {
+            "network" => 0,
+            "pipewire" => 1,
+            "diskspace" => 2,
+            "battery" => 3,
+            "date" => 4,
+            "time" => 5,
+            _ => continue,
+        };
 
-        let mut actual_outputs: Vec<String> = Vec::new();
+        status[idx] = Some(update.text);
 
-        if let Some(network) = status.get("network") {
-            actual_outputs.push(network.to_string());
-        }
-        if let Some(pipewire) = status.get("pipewire") {
-            actual_outputs.push(pipewire.to_string());
-        }
-        if let Some(disk) = status.get("diskspace") {
-            actual_outputs.push(disk.to_string());
-        }
-        if let Some(battery) = status.get("battery") {
-            actual_outputs.push(battery.to_string());
-        }
-        if let Some(date) = status.get("date") {
-            actual_outputs.push(date.to_string());
-        }
-        if let Some(time) = status.get("time") {
-            actual_outputs.push(time.to_string());
+        // INFO: I did this for better mem usage; I clear and reuse the buffer instead of
+        // allocating new strings like in the original code
+        output.clear();
+
+        let mut first = true;
+        for item in &status {
+            if let Some(text) = item {
+                if !first {
+                    output.push(' ');
+                }
+                output.push_str(text);
+                first = false;
+            }
         }
 
-        println!("{}", actual_outputs.join(" "));
-
-        std::io::stdout().flush().unwrap();
+        let _ = writeln!(handle, "{}", output);
+        let _ = handle.flush();
     }
 }
