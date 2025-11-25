@@ -93,7 +93,11 @@ pub async fn network(
             } else {
                 escape_pango(&ssid_str)
             },
-            escape_pango(&ip_str),
+            if ip_str.is_empty() {
+                "No IP".to_string()
+            } else {
+                escape_pango(&ip_str)
+            },
         );
 
         let final_color =
