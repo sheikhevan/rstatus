@@ -36,7 +36,7 @@ pub async fn network(
         let ip = Command::new("sh")
             .arg("-c")
             .arg(format!(
-                "ip -4 addr show {} | grep -oP '(?<=inet\\s)\\d+(\\.\\d+){{3}}' | head -n1",
+                "ip -4 -o addr show {} | awk '{{print $4}}' | cut -d/ -f1 | grep -E '^(10\\.|172\\.(1[6-9]|2[0-9]|3[01])\\.|192\\.168\\.)' | head -n1",
                 interface_name
             ))
             .output()

@@ -34,11 +34,11 @@ async fn main() {
         "white",
         true,
     ));
-    tokio::spawn(crate::modules::disk::diskspace(tx.clone(), 1, "white"));
+    tokio::spawn(crate::modules::disk::diskspace(tx.clone(), 5, "white"));
     tokio::spawn(crate::modules::battery::battery(
         tx.clone(),
         "macsmc-battery",
-        1,
+        2,
         "white",
         true,
     ));
