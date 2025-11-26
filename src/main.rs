@@ -28,7 +28,7 @@ async fn main() {
 
     tokio::spawn(crate::modules::network::network(
         tx.clone(),
-        "wlp1s0f0",
+        "wlan0",
         1,
         "white",
         true,
